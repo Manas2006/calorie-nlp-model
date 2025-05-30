@@ -1,0 +1,27 @@
+# Model configuration
+[model]
+embedding_dim = 768  # MPNet base dimension
+hidden_dims = [512, 256, 128]  # Hidden layer dimensions
+dropout = 0.3  # Dropout rate
+batch_norm = true  # Whether to use batch normalization
+
+# Training configuration
+[train]
+batch_size = 32
+epochs = 50
+lr = 0.001
+patience = 5  # Early stopping patience
+k_folds = 5  # Number of cross-validation folds
+delta = 1.0  # Huber loss delta parameter
+
+# Data configuration
+[data]
+recipes_path = "data/recipes.csv"
+fruits_path = "data/fruits.csv"
+n_bins = 5  # Number of calorie bins for stratification
+outlier_threshold = 3.0  # Standard deviations for outlier removal
+
+# Embedding configuration
+[embedding]
+model_name = "all-mpnet-base-v2"
+cache_dir = "model_cache" 
