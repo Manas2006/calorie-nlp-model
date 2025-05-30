@@ -25,10 +25,14 @@ wheels/
 *.egg
 
 # Data files
-data/
+# data/   # <-- Do NOT ignore the whole data directory
+calorie_nlp/data/*.csv
+calorie_nlp/data/*.json
+calorie_nlp/data/*.txt
 *.csv
 *.json
 *.txt
+!requirements.txt
 
 # Model files
 *.pkl

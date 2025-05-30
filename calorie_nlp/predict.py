@@ -99,7 +99,11 @@ def main():
         # Snacks
         "potato chips",
         "trail mix",
-        "protein bar"
+        "protein bar",
+
+        "paneer tikka masala",
+        "paneer bhurji",
+        "zero calorie diet coke"
     ]
     
     # Load model and embedder
