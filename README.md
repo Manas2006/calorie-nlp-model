@@ -1,101 +1,55 @@
-# Calorie Prediction Model
+# Calorie NLP Model
 
-A machine learning model that predicts calories per 100g for food items based on their names using natural language processing.
+A minimal, reproducible machine learning pipeline for predicting calories from food names using NLP techniques and a deep MLP model.
 
-## Project Structure
-
-```
-calorie_nlp/
-├── data/
-│   ├── utils.py         # Text cleaning and feature extraction
-│   └── datasets.py      # Dataset loading and preprocessing
-├── models/
-│   ├── embedder.py      # Sentence transformer model loading
-│   ├── mlp.py          # MLP model architecture
-│   └── train.py        # Training and evaluation logic
-├── experiments/         # Training logs and model checkpoints
-├── tests/              # Unit tests
-├── config.toml         # Configuration file
-└── predict.py          # Command-line interface
-```
+## Project Overview
+- **Purpose:** Predict the calorie content of foods based on their names using modern NLP embeddings and a deep learning model.
+- **Tech Stack:** Python, PyTorch, Sentence-BERT, scikit-learn, pandas, numpy.
+- **No large data or model files are included**—users must provide their own data and/or model checkpoint for training or inference.
 
 ## Features
+- Deep MLP model for regression on log-calories
+- Sentence-BERT (all-mpnet-base-v2) embeddings for food names
+- Structured features (e.g., token count)
+- Modular, reproducible codebase
+- Sliding-window cross-validation and early stopping
+- Configurable via `config.toml`
+- CLI for prediction
 
-- Uses MPNet embeddings for text representation
-- Deep MLP architecture with batch normalization and dropout
-- Log-transformed calorie predictions
-- Huber loss for robust training
-- K-fold cross-validation with stratification
-- Early stopping to prevent overfitting
-- Progress bars for training and validation
-- Comprehensive logging of training metrics
-- Command-line interface for predictions
-
-## Installation
-
-1. Create a conda environment:
-```bash
-conda create -n calorie-env python=3.9
-conda activate calorie-env
+## Setup
+1. **Clone the repository:**
+   ```sh
+git clone https://github.com/Manas2006/calorie-nlp-model.git
+cd calorie-nlp-model
 ```
-
-2. Install dependencies:
-```bash
+2. **Install dependencies:**
+   ```sh
 pip install -r requirements.txt
 ```
+   Or use your preferred environment manager.
+
+3. **Prepare your data:**
+   - Place your `recipes.csv` and/or `fruits.csv` in the `data/` directory (not included in repo).
+   - Or use your own dataset with the same format.
+
+4. **(Optional) Train the model:**
+   ```sh
+python calorie_nlp/train.py --config config.toml
+```
+   - This will train a new model and save the checkpoint.
+
+5. **Run predictions:**
+   ```sh
+python calorie_nlp/predict.py --model-path models/best_mlp.pth --input "grilled chicken salad"
+```
+   - Replace `models/best_mlp.pth` with your own trained model checkpoint.
 
 ## Usage
+- All configuration is handled via `config.toml`.
+- See `calorie_nlp/predict.py` for CLI usage and options.
 
-### Training
-
-1. Place your datasets in the `data/` directory:
-   - `recipes.csv`: Recipe dataset with columns for name and calories
-   - `fruits.csv`: Fruits dataset with columns for name and calories
-
-2. Configure hyperparameters in `config.toml`
-
-3. Run training:
-```bash
-python -m calorie_nlp.train
-```
-
-### Making Predictions
-
-Use the command-line interface to predict calories for food items:
-
-```bash
-python predict.py "grilled chicken breast"
-```
-
-Optional arguments:
-- `--model`: Path to model weights (default: models/best_mlp.pth)
-- `--config`: Path to config file (default: config.toml)
-
-## Configuration
-
-The `config.toml` file contains all configurable parameters:
-
-- Model architecture (hidden dimensions, dropout, etc.)
-- Training parameters (batch size, learning rate, etc.)
-- Data settings (paths, preprocessing options)
-- Embedding model configuration
-
-## Development
-
-### Running Tests
-
-```bash
-pytest tests/
-```
-
-### Adding New Features
-
-1. Create a new branch
-2. Add tests in `tests/`
-3. Implement feature
-4. Run tests
-5. Submit pull request
+## Contributing
+Pull requests and issues are welcome! Please open an issue to discuss major changes first.
 
 ## License
-
-MIT License 
+MIT License. See `LICENSE` file for details. 
