@@ -4,6 +4,41 @@ A minimal, reproducible machine learning pipeline for predicting calories from f
 
 ---
 
+## 🚦 Quickstart
+
+Follow these steps to get the project up and running on your machine:
+
+1. **Clone the repository:**
+   ```sh
+   git clone https://github.com/Manas2006/calorie-nlp-model.git
+   cd calorie-nlp-model
+   ```
+2. **(Recommended) Create a virtual environment:**
+   ```sh
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
+3. **Install dependencies:**
+   ```sh
+   pip install -r requirements.txt
+   ```
+4. **Prepare your data:**
+   - Place your `recipes.csv` and/or `fruits.csv` in the `data/` directory (not included in repo).
+   - Or use your own dataset with the same format (see `calorie_nlp/data/datasets.py`).
+5. **(Optional) Train the model:**
+   ```sh
+   python3 -m calorie_nlp.train --config config.toml
+   ```
+   - This will save a model checkpoint to `models/best_mlp.pth`.
+6. **Run predictions:**
+   - To avoid Hugging Face cache permission issues, use a local cache directory:
+   ```sh
+   HF_HOME=./model_cache python3 -m calorie_nlp.predict --model-path ./models/best_mlp.pth --input "grilled chicken salad"
+   ```
+   - Replace the input string and model path as needed.
+
+---
+
 ## 🥗 Introduction
 This project provides a robust, modular pipeline for predicting the calorie content of foods based on their names. It leverages modern NLP (Sentence-BERT) embeddings and a deep MLP architecture, with a focus on reproducibility, extensibility, and ease of use.
 
@@ -45,20 +80,6 @@ README.md                # Project documentation
 
 ---
 
-## ⚙️ Setup
-1. **Clone the repository:**
-   ```sh
-   git clone https://github.com/Manas2006/calorie-nlp-model.git
-   cd calorie-nlp-model
-   ```
-2. **Install dependencies:**
-   ```sh
-   pip install -r requirements.txt
-   ```
-   Or use your preferred environment manager.
-
----
-
 ## 📊 Data Preparation
 - Place your `recipes.csv` and/or `fruits.csv` in the `data/` directory (not included in repo).
 - Or use your own dataset with the same format (see `calorie_nlp/data/datasets.py` for expected columns and preprocessing).
@@ -70,7 +91,7 @@ README.md                # Project documentation
    - Edit `config.toml` to set model, training, and data parameters.
 2. **Train the model:**
    ```sh
-   python calorie_nlp/train.py --config config.toml
+   python3 -m calorie_nlp.train --config config.toml
    ```
    - This will train a new model and save the checkpoint to `models/`.
 
@@ -79,7 +100,7 @@ README.md                # Project documentation
 ## 🔮 Inference / Prediction
 Run predictions from the command line:
 ```sh
-python calorie_nlp/predict.py --model-path models/best_mlp.pth --input "grilled chicken salad"
+HF_HOME=./model_cache python3 -m calorie_nlp.predict --model-path ./models/best_mlp.pth --input "grilled chicken salad"
 ```
 - Replace `models/best_mlp.pth` with your own trained model checkpoint.
 - See `calorie_nlp/predict.py` for more CLI options.
