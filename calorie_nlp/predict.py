@@ -5,6 +5,7 @@ from sentence_transformers import SentenceTransformer
 from .models.mlp import CalorieMLP
 from .data.utils import clean_text, token_count
 import tomli
+import argparse
 
 def load_model_and_embedder(config_path: str = "config.toml"):
     """Load the trained model and embedder.
@@ -65,46 +66,19 @@ def predict_calories(
         inputs = torch.FloatTensor(features)
         log_preds = model(inputs)
         preds = torch.expm1(log_preds).numpy()
+        
+        # Handle both single and multiple predictions
+        if preds.ndim == 0:
+            preds = np.array([preds])
     
     return preds.tolist()
 
 def main():
-    # Test foods
-    test_foods = [
-        # Simple foods
-        "apple",
-        "banana",
-        "chicken breast",
-        
-        # Healthy variations
-        "grilled chicken breast salad",
-        "steamed vegetables",
-        "baked salmon",
-        
-        # Unhealthy variations
-        "deep fried chicken wings",
-        "creamy chocolate cake",
-        "extra cheesy pizza",
-        
-        # Mixed dishes
-        "chicken curry with rice",
-        "beef stir fry with noodles",
-        "vegetable pasta",
-        
-        # Desserts
-        "chocolate ice cream",
-        "fruit salad",
-        "cheesecake",
-        
-        # Snacks
-        "potato chips",
-        "trail mix",
-        "protein bar",
-
-        "paneer tikka masala",
-        "paneer bhurji",
-        "zero calorie diet coke"
-    ]
+    # Parse command line arguments
+    parser = argparse.ArgumentParser(description="Predict calories for food items")
+    parser.add_argument("--input", type=str, help="Food item to predict calories for")
+    parser.add_argument("--model-path", type=str, default="models/best_mlp.pth", help="Path to the model checkpoint")
+    args = parser.parse_args()
     
     # Load model and embedder
     print("Loading model and embedder...")
@@ -112,16 +86,34 @@ def main():
     
     # Make predictions
     print("\nMaking predictions...")
-    predictions = predict_calories(test_foods, model, embedder)
-    
-    # Display results
-    print("\nPredictions:")
-    print("-" * 50)
-    print(f"{'Food Item':<30} {'Calories/100g':>15}")
-    print("-" * 50)
-    for food, pred in zip(test_foods, predictions):
-        print(f"{food:<30} {pred:>15.1f}")
-    print("-" * 50)
+    if args.input:
+        # Single food prediction
+        pred = predict_calories([args.input], model, embedder)[0]
+        print("\nPrediction:")
+        print("-" * 50)
+        print(f"{'Food Item':<30} {'Calories/100g':>15}")
+        print("-" * 50)
+        print(f"{args.input:<30} {pred:>15.1f}")
+        print("-" * 50)
+    else:
+        # Test foods (default behavior)
+        test_foods = [
+            "apple", "banana", "chicken breast",
+            "grilled chicken breast salad", "steamed vegetables", "baked salmon",
+            "deep fried chicken wings", "creamy chocolate cake", "extra cheesy pizza",
+            "chicken curry with rice", "beef stir fry with noodles", "vegetable pasta",
+            "chocolate ice cream", "fruit salad", "cheesecake",
+            "potato chips", "trail mix", "protein bar",
+            "paneer tikka masala", "paneer bhurji", "zero calorie diet coke"
+        ]
+        predictions = predict_calories(test_foods, model, embedder)
+        print("\nPredictions:")
+        print("-" * 50)
+        print(f"{'Food Item':<30} {'Calories/100g':>15}")
+        print("-" * 50)
+        for food, pred in zip(test_foods, predictions):
+            print(f"{food:<30} {pred:>15.1f}")
+        print("-" * 50)
 
 if __name__ == "__main__":
     main() 
