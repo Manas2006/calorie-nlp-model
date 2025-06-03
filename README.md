@@ -1,130 +1,108 @@
-# Calorie NLP Model
+# Calorie Prediction Model
 
-A minimal, reproducible machine learning pipeline for predicting calories from food names using NLP techniques and a deep MLP model.
+A machine learning model that predicts calories in food items using natural language processing. The model uses sentence embeddings and a multi-layer perceptron to predict calories per 100g of food items.
 
----
+## Features
 
-## 🚦 Quickstart
+- Predicts calories per 100g for any food item
+- Uses state-of-the-art sentence embeddings (MPNet)
+- Handles complex food descriptions
+- Provides both CLI and API interfaces
+- Supports batch predictions
 
-Follow these steps to get the project up and running on your machine:
+## Installation
 
-1. **Clone the repository:**
-   ```sh
-   git clone https://github.com/Manas2006/calorie-nlp-model.git
-   cd calorie-nlp-model
+1. Clone the repository:
+```bash
+git clone https://github.com/Manas2006/calorie-nlp-model.git
+cd calorie-nlp-model
+```
+
+2. Create and activate a virtual environment:
+```bash
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+```
+
+3. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+## Usage
+
+### Command Line Interface
+
+Predict calories for a single food item:
+```bash
+python -m calorie_nlp.predict --input "chocolate milk"
+```
+
+Predict calories for multiple food items (default test set):
+```bash
+python -m calorie_nlp.predict
+```
+
+### API Server
+
+Start the FastAPI server:
+```bash
+python -m calorie_nlp.api
+```
+
+The server will start at http://localhost:8000. You can:
+
+1. View API documentation:
+   - Swagger UI: http://localhost:8000/docs
+   - ReDoc: http://localhost:8000/redoc
+
+2. Make predictions using curl:
+
+   Single food prediction:
+   ```bash
+   curl -X POST http://localhost:8000/predict \
+     -H "Content-Type: application/json" \
+     -d '{"name": "chocolate milk"}'
    ```
-2. **(Recommended) Create a virtual environment:**
-   ```sh
-   python3 -m venv .venv
-   source .venv/bin/activate
+
+   Batch predictions:
+   ```bash
+   curl -X POST http://localhost:8000/predict/batch \
+     -H "Content-Type: application/json" \
+     -d '{"items": ["chocolate milk", "apple", "pizza"]}'
    ```
-3. **Install dependencies:**
-   ```sh
-   pip install -r requirements.txt
+
+   Health check:
+   ```bash
+   curl http://localhost:8000/health
    ```
-4. **Prepare your data:**
-   - Place your `recipes.csv` and/or `fruits.csv` in the `data/` directory (not included in repo).
-   - Or use your own dataset with the same format (see `calorie_nlp/data/datasets.py`).
-5. **(Optional) Train the model:**
-   ```sh
-   python3 -m calorie_nlp.train --config config.toml
-   ```
-   - This will save a model checkpoint to `models/best_mlp.pth`.
-6. **Run predictions:**
-   - To avoid Hugging Face cache permission issues, use a local cache directory:
-   ```sh
-   HF_HOME=./model_cache python3 -m calorie_nlp.predict --model-path ./models/best_mlp.pth --input "grilled chicken salad"
-   ```
-   - Replace the input string and model path as needed.
 
----
+## Model Architecture
 
-## 🥗 Introduction
-This project provides a robust, modular pipeline for predicting the calorie content of foods based on their names. It leverages modern NLP (Sentence-BERT) embeddings and a deep MLP architecture, with a focus on reproducibility, extensibility, and ease of use.
+The model uses a two-stage approach:
+1. Text Embedding: Uses MPNet to generate embeddings for food descriptions
+2. Calorie Prediction: A multi-layer perceptron that takes embeddings and additional features to predict calories
 
-- **No large data or model files are included**—users must provide their own data and/or model checkpoint for training or inference.
+## Project Structure
 
----
-
-## 🚀 Features
-- Deep MLP model for regression on log-calories
-- Sentence-BERT (all-mpnet-base-v2) embeddings for food names
-- Structured features (e.g., token count)
-- Modular, reproducible codebase
-- Sliding-window cross-validation and early stopping
-- Configurable via `config.toml`
-- CLI for prediction
-- Data processing and loading utilities
-- Unit tests for core components
-
----
-
-## 📁 Project Structure
 ```
 calorie_nlp/
-├── data/
-│   ├── utils.py         # Text cleaning and feature extraction
-│   └── datasets.py      # Dataset loading and preprocessing
+├── api.py              # FastAPI server implementation
+├── predict.py          # CLI prediction script
 ├── models/
-│   ├── embedder.py      # Sentence transformer model loading
-│   ├── mlp.py           # MLP model architecture
-│   └── train.py         # Training and evaluation logic
-├── tests/               # Unit tests
-├── predict.py           # CLI for predictions
-├── train.py             # Main training script
-config.toml              # Configuration file
-requirements.txt         # Python dependencies
-setup.py                 # Package setup
-README.md                # Project documentation
+│   └── mlp.py         # MLP model implementation
+├── data/
+│   └── utils.py       # Data processing utilities
+└── tests/             # Unit tests
 ```
 
----
+## Testing
 
-## 📊 Data Preparation
-- Place your `recipes.csv` and/or `fruits.csv` in the `data/` directory (not included in repo).
-- Or use your own dataset with the same format (see `calorie_nlp/data/datasets.py` for expected columns and preprocessing).
-
----
-
-## 🏋️ Training
-1. **Configure hyperparameters:**
-   - Edit `config.toml` to set model, training, and data parameters.
-2. **Train the model:**
-   ```sh
-   python3 -m calorie_nlp.train --config config.toml
-   ```
-   - This will train a new model and save the checkpoint to `models/`.
-
----
-
-## 🔮 Inference / Prediction
-Run predictions from the command line:
-```sh
-HF_HOME=./model_cache python3 -m calorie_nlp.predict --model-path ./models/best_mlp.pth --input "grilled chicken salad"
-```
-- Replace `models/best_mlp.pth` with your own trained model checkpoint.
-- See `calorie_nlp/predict.py` for more CLI options.
-
----
-
-## 🛠️ Configuration
-- All configuration is handled via `config.toml`.
-- You can set model architecture, training parameters, data paths, and more.
-
----
-
-## 🧪 Testing
-Run unit tests to verify core functionality:
-```sh
-pytest calorie_nlp/tests/
+Run the test suite:
+```bash
+pytest
 ```
 
----
+## License
 
-## 🤝 Contributing
-Pull requests and issues are welcome! Please open an issue to discuss major changes first.
-
----
-
-## 📄 License
-MIT License. See `LICENSE` file for details. 
+This project is licensed under the MIT License - see the LICENSE file for details. 
