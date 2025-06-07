@@ -1,0 +1,1 @@
+web: gunicorn calorie_nlp.api:app -c gunicorn.conf.py 
