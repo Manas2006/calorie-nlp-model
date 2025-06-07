@@ -1,9 +1,16 @@
 """FastAPI server for calorie predictions."""
+import os
+import torch
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import List
-import uvicorn
-from .predict import load_model_and_embedder, predict_calories
+from typing import List, Optional
+from sentence_transformers import SentenceTransformer
+from calorie_nlp.models.mlp import CalorieMLP
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Calorie Prediction API",
@@ -11,57 +18,109 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Load model and embedder at startup
-print("Loading model and embedder...")
-model, embedder = load_model_and_embedder()
+# Global variables for model and embedder
+model = None
+embedder = None
 
 class FoodItem(BaseModel):
     """Food item for prediction."""
     name: str
 
-class FoodItems(BaseModel):
-    """Multiple food items for prediction."""
+class BatchFoodItems(BaseModel):
+    """Batch of food items for prediction."""
     items: List[str]
 
-class Prediction(BaseModel):
-    """Prediction response."""
+class PredictionResponse(BaseModel):
+    """Response model for predictions."""
     food: str
     calories_per_100g: float
 
-class Predictions(BaseModel):
-    """Multiple predictions response."""
-    predictions: List[Prediction]
+class BatchPredictionResponse(BaseModel):
+    """Response model for batch predictions."""
+    predictions: List[PredictionResponse]
 
-@app.post("/predict", response_model=Prediction)
-async def predict_single(food: FoodItem):
-    """Predict calories for a single food item."""
+def load_models():
+    """Load the MLP model and sentence embedder."""
+    global model, embedder
+    
     try:
-        pred = predict_calories([food.name], model, embedder)[0]
-        return Prediction(food=food.name, calories_per_100g=pred)
+        # Load models with memory optimization
+        torch.set_num_threads(1)  # Limit CPU threads
+        torch.set_num_interop_threads(1)
+        
+        # Load embedder with memory optimization
+        embedder = SentenceTransformer('all-mpnet-base-v2')
+        embedder.max_seq_length = 128  # Reduce max sequence length
+        
+        # Load MLP model
+        model = CalorieMLP()
+        model.eval()  # Set to evaluation mode
+        
+        logger.info("Models loaded successfully")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Error loading models: {str(e)}")
+        raise
 
-@app.post("/predict/batch", response_model=Predictions)
-async def predict_batch(foods: FoodItems):
-    """Predict calories for multiple food items."""
-    try:
-        preds = predict_calories(foods.items, model, embedder)
-        predictions = [
-            Prediction(food=food, calories_per_100g=pred)
-            for food, pred in zip(foods.items, preds)
-        ]
-        return Predictions(predictions=predictions)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+@app.on_event("startup")
+async def startup_event():
+    """Load models on startup."""
+    load_models()
 
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
     return {"status": "healthy"}
 
-def start():
-    """Start the FastAPI server."""
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+@app.post("/predict", response_model=PredictionResponse)
+async def predict_calories(food: FoodItem):
+    """Predict calories for a single food item."""
+    try:
+        # Get embedding
+        embedding = embedder.encode(food.name, convert_to_tensor=True)
+        
+        # Add token count feature
+        token_count = len(food.name.split())
+        features = torch.cat([embedding, torch.tensor([token_count], dtype=torch.float32)])
+        
+        # Make prediction
+        with torch.no_grad():
+            calories = model(features.unsqueeze(0))
+        
+        return {
+            "food": food.name,
+            "calories_per_100g": float(calories.item())
+        }
+    except Exception as e:
+        logger.error(f"Error making prediction: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/predict/batch", response_model=BatchPredictionResponse)
+async def predict_calories_batch(foods: BatchFoodItems):
+    """Predict calories for multiple food items."""
+    try:
+        predictions = []
+        for food_name in foods.items:
+            # Get embedding
+            embedding = embedder.encode(food_name, convert_to_tensor=True)
+            
+            # Add token count feature
+            token_count = len(food_name.split())
+            features = torch.cat([embedding, torch.tensor([token_count], dtype=torch.float32)])
+            
+            # Make prediction
+            with torch.no_grad():
+                calories = model(features.unsqueeze(0))
+            
+            predictions.append({
+                "food": food_name,
+                "calories_per_100g": float(calories.item())
+            })
+        
+        return {"predictions": predictions}
+    except Exception as e:
+        logger.error(f"Error making batch prediction: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
-    start() 
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000) 
